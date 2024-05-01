@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
 set -eo pipefail
-
-if [[ ! -d gasket-driver ]]; then
-	git clone git@github.com:google/gasket-driver.git
-fi
-
-apt install pve-headers-$(uname -r)
-#apt-get reinstall gasket-dkms libedgetpu1-std
-apt install dh-dkms build-essential devscripts git
+rm -rf gasket-driver
+git clone https://github.com/google/gasket-driver.git
+apt remove gasket-dkms -y
+apt install pve-headers-$(uname -r) -y
+#apt-get reinstall gasket-dkms libedgetpu1-std -y
+apt install dh-dkms build-essential devscripts git -y
 cd gasket-driver
 debuild -us -uc -tc -b
-apt install ../gasket-dkms_*_all.deb
+mv ../gasket-dkms_*_all.deb /tmp
+apt install /tmp/gasket-dkms_*_all.deb -y
