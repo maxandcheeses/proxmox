@@ -11,5 +11,6 @@ cd gasket-driver
 debuild -us -uc -tc -b
 mv ../gasket-dkms_*_all.deb /tmp
 apt install /tmp/gasket-dkms_*_all.deb -y
+rm -rf ../gasket-dkms_*
 
 echo "Full system reboot maybe required"
