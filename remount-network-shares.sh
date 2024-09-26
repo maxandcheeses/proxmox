@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -eo pipefail
 
-. .env
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/.env"
 
 for share in "${CIFS_SHARES[@]}"; do
   echo "unmounting $share"	
