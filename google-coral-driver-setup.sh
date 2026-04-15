@@ -18,7 +18,8 @@ fi
 
 # Clone driver repo and build
 rm -rf gasket-driver
-git clone https://github.com/google/gasket-driver.git
+#git clone https://github.com/google/gasket-driver.git
+git clone https://github.com/maxandcheeses/gasket-driver.git
 
 apt-get remove -y gasket-dkms
 apt-get install -y pve-headers-$(uname -r)
