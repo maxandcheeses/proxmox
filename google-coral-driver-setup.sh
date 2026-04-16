@@ -1,35 +1,34 @@
 #!/usr/bin/env bash
 set -eo pipefail
 
-# Check if gasket-dkms is installed
+# Remove broken or existing gasket-dkms apt package if present
 if dpkg -l | grep -q "gasket-dkms"; then
-    echo "gasket-dkms is installed."
-else
-    # Add Coral EdgeTPU APT repo and GPG key
-    echo "Adding Coral EdgeTPU repository..."
-    curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg -o /usr/share/keyrings/coral-edgetpu.gpg
-
-    echo "deb [signed-by=/usr/share/keyrings/coral-edgetpu.gpg] https://packages.cloud.google.com/apt coral-edgetpu-stable main" \
-        | tee /etc/apt/sources.list.d/coral-edgetpu.list > /dev/null
-
-    apt-get update
-    apt-get install -y dkms
+    echo "Removing existing gasket-dkms package..."
+    dpkg --remove --force-remove-reinstreq gasket-dkms || true
+    apt-get remove -y gasket-dkms 2>/dev/null || true
 fi
 
-# Clone driver repo and build
+# Install build dependencies
+# Try pve-headers first (PVE kernel), fall back to linux-headers (Debian stock kernel)
+echo "Installing build dependencies..."
+apt-get install -y pve-headers-$(uname -r) || \
+    apt-get install -y linux-headers-$(uname -r)
+apt-get install -y dkms dh-dkms build-essential devscripts git
+
+# Clone patched gasket driver (fixes kernel 6.6+ API incompatibilities)
+echo "Cloning patched gasket driver..."
 rm -rf gasket-driver
-#git clone https://github.com/google/gasket-driver.git
 git clone https://github.com/maxandcheeses/gasket-driver.git
-
-apt-get remove -y gasket-dkms
-apt-get install -y pve-headers-$(uname -r)
-apt-get install -y dh-dkms build-essential devscripts git
-
 cd gasket-driver
 debuild -us -uc -tc -b
+cd ..
 
-mv ../gasket-dkms_*_all.deb /tmp
+# Move .deb to /tmp so apt can access it without root sandboxing warning
+mv gasket-dkms_*_all.deb /tmp/
 apt-get install -y /tmp/gasket-dkms_*_all.deb
-rm -rf ../gasket-dkms_*
 
-echo "Full system reboot may be required."
+# Cleanup
+rm -f /tmp/gasket-dkms_*_all.deb
+rm -rf gasket-driver gasket_* gasket-dkms_*.buildinfo gasket-dkms_*.changes
+
+echo "Done. A full reboot is recommended."
